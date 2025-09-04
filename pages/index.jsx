@@ -1,13 +1,72 @@
-# Create two ready-to-use files: updated pages/index.jsx and pages/api/sol-volume.js
-import os, textwrap, json, zipfile, shutil, pathlib
+# Build an updated Next.js project (v2) reflecting the user's latest edits
+import os, json, zipfile, shutil, textwrap, pathlib
 
-base = "/mnt/data/fix-v3"
-if os.path.exists(base):
-    shutil.rmtree(base)
-os.makedirs(base, exist_ok=True)
-os.makedirs(os.path.join(base, "pages", "api"), exist_ok=True)
+base = "/mnt/data"
+proj = os.path.join(base, "lp-memecoin-class-v2")
+if os.path.exists(proj):
+    shutil.rmtree(proj)
+os.makedirs(proj, exist_ok=True)
+os.makedirs(os.path.join(proj, "pages"), exist_ok=True)
+os.makedirs(os.path.join(proj, "styles"), exist_ok=True)
+os.makedirs(os.path.join(proj, "public"), exist_ok=True)
 
-index_jsx = r"""import React, { useMemo, useState } from 'react';
+# package.json (no recharts now)
+package_json = {
+  "name": "lp-memecoin-class",
+  "version": "2.0.0",
+  "private": True,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "autoprefixer": "^10.4.19",
+    "framer-motion": "^11.0.0",
+    "next": "14.2.4",
+    "postcss": "^8.4.35",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "tailwindcss": "^3.4.6"
+  }
+}
+with open(os.path.join(proj, "package.json"), "w") as f:
+    json.dump(package_json, f, indent=2)
+
+# next.config.js
+open(os.path.join(proj, "next.config.js"), "w").write("""/** @type {import('next').NextConfig} */
+const nextConfig = { reactStrictMode: true };
+module.exports = nextConfig;
+""")
+
+# tailwind / postcss configs
+open(os.path.join(proj, "tailwind.config.js"), "w").write("""/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ["./pages/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
+  theme: { extend: {} },
+  plugins: [],
+};
+""")
+
+open(os.path.join(proj, "postcss.config.js"), "w").write("""module.exports = {
+  plugins: { tailwindcss: {}, autoprefixer: {} },
+};
+""")
+
+# _app.js and globals.css
+open(os.path.join(proj, "pages", "_app.js"), "w").write("""import '../styles/globals.css'
+export default function App({ Component, pageProps }) { return <Component {...pageProps} /> }
+""")
+
+open(os.path.join(proj, "styles", "globals.css"), "w").write("""@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+""")
+
+# index.jsx reflecting all edits
+index_content = r"""import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 
 // Helper: format IDR
@@ -21,7 +80,7 @@ function impermanentLossRatio(priceRatio){
   return Math.max(0, -il);
 }
 
-// === Real-time Volume from API route ===
+// === Real-time Volume from Dexscreener (Solana) ===
 function LiveVolume(){
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
@@ -30,11 +89,15 @@ function LiveVolume(){
   React.useEffect(()=>{
     async function run(){
       try{
-        const res = await fetch('/api/sol-volume');
+        const res = await fetch('https://api.dexscreener.com/latest/dex/pairs/solana');
         if(!res.ok) throw new Error('Network response was not ok');
         const data = await res.json();
         const list = data?.pairs || [];
-        setPairs(list);
+        const top = list
+          .filter(p => p?.volume?.h24)
+          .sort((a,b)=> (b.volume.h24||0) - (a.volume.h24||0))
+          .slice(0, 8);
+        setPairs(top);
       }catch(e){ setError(e.message); }
       finally{ setLoading(false); }
     }
@@ -105,7 +168,7 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 pointer-events-none bg-gradient-to-b from-emerald-600/10 via-fuchsia-600/5 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-emerald-600/10 via-fuchsia-600/5 to-transparent" />
         <div className="mx-auto max-w-7xl px-4 py-16 lg:py-24 grid md:grid-cols-2 gap-10 items-center">
           <div>
             <motion.h1 initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.6}} className="text-4xl md:text-5xl font-extrabold leading-tight">
@@ -115,21 +178,13 @@ export default function LandingPage() {
               Lupakan trading memecoin yang berisiko tinggi. Jadilah Liquidity Provider dengan risiko yang lebih minim dan income dari fee swap.
             </p>
             <ul className="mt-6 space-y-2 text-neutral-300">
-              <li>• E-book panduan lengkap</li>
+              <li>• E‑book panduan lengkap</li>
               <li>• Akses ke Grup Telegram private</li>
               <li>• Monitoring & update strategi</li>
             </ul>
             <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                onClick={() => document.getElementById('checkout')?.scrollIntoView({ behavior: 'smooth' })}
-                className="rounded-2xl bg-emerald-500 px-6 py-3 font-semibold text-neutral-900 hover:bg-emerald-400">
-                Gabung Sekarang
-              </button>
-              <button
-                onClick={() => document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' })}
-                className="rounded-2xl border border-neutral-700 px-6 py-3 font-semibold hover:border-neutral-500">
-                Coba Kalkulator
-              </button>
+              <a href="#checkout" className="rounded-2xl bg-emerald-500 px-6 py-3 font-semibold text-neutral-900 hover:bg-emerald-400">Gabung Sekarang</a>
+              <a href="#calculator" className="rounded-2xl border border-neutral-700 px-6 py-3 font-semibold hover:border-neutral-500">Coba Kalkulator</a>
             </div>
             <p className="mt-3 text-xs text-neutral-400">Disclaimer: Tidak ada jaminan profit. Hasil bergantung pada pasar & eksekusi Anda.</p>
           </div>
@@ -215,12 +270,12 @@ export default function LandingPage() {
         <h2 className="text-2xl md:text-3xl font-bold">Apa yang Akan Anda Pelajari</h2>
         <div className="mt-6 grid md:grid-cols-2 gap-6">
           <ul className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6 space-y-3 text-sm">
-            <li>✅ Dasar-dasar AMM & pool di Solana</li>
+            <li>✅ Dasar‑dasar AMM & pool di Solana</li>
             <li>✅ Cara memilih pool dengan volume tinggi</li>
             <li>✅ Menghindari impermanent loss berlebih</li>
             <li>✅ Mendeteksi token scam & menjaga modal</li>
             <li>✅ Tools eksekusi di ekosistem Solana (DEX, analytics, wallet)</li>
-            <li>✅ Step-by-step setup & monitoring</li>
+            <li>✅ Step‑by‑step setup & monitoring</li>
           </ul>
           <div className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6">
             <h3 className="font-semibold">Bonus</h3>
@@ -236,7 +291,7 @@ export default function LandingPage() {
 
       {/* Pricing */}
       <section id="checkout" className="mx-auto max-w-7xl px-4 py-16">
-        <h2 className="text-2xl md:text-3xl font-bold">Paket All-in-One</h2>
+        <h2 className="text-2xl md:text-3xl font-bold">Paket All‑in‑One</h2>
         <div className="mt-6 grid md:grid-cols-1 gap-6">
           <div className="rounded-3xl border border-emerald-500/50 bg-neutral-900/90 p-6 flex flex-col">
             <div className="mb-2 text-xs font-semibold text-emerald-400">Diskon Spesial</div>
@@ -244,7 +299,7 @@ export default function LandingPage() {
             <div className="mt-1 text-3xl font-extrabold">{idr(200000)}</div>
             <div className="mt-1 text-sm line-through text-neutral-500">{idr(500000)}</div>
             <ul className="mt-4 space-y-2 text-sm text-neutral-300">
-              <li>• E-book lengkap</li>
+              <li>• E‑book lengkap</li>
               <li>• Akses Grup Telegram Private</li>
               <li>• Monitoring & update strategi</li>
             </ul>
@@ -260,7 +315,7 @@ export default function LandingPage() {
         <div className="mt-6 space-y-4">
           <Faq q="Apakah pasti dapat income tiap bulan?" a="Tidak ada jaminan profit. Hasil bergantung pada modal, kondisi pasar, strategi, dan eksekusi." />
           <Faq q="Apakah menjadi LP tanpa risiko?" a="Tidak. Risiko utama termasuk impermanent loss, fluktuasi yield, risiko protokol/kontrak pintar, dan volatilitas aset. Materi membantu mengenali dan mengelolanya." />
-          <Faq q="Apa saja yang saya dapatkan?" a="Anda mendapat e-book, akses grup Telegram, monitoring, panduan memilih pool ramai, cara menghindari impermanent loss, serta menghindari token scam." />
+          <Faq q="Apa saja yang saya dapatkan?" a="Anda mendapat e‑book, akses grup Telegram, monitoring, panduan memilih pool ramai, cara menghindari impermanent loss, serta menghindari token scam." />
         </div>
         <p className="mt-6 text-xs text-neutral-400">Disclaimer: Konten untuk tujuan edukasi. Bukan nasihat keuangan atau ajakan membeli aset kripto.</p>
       </section>
@@ -290,37 +345,33 @@ function Faq({ q, a }){
   );
 }
 """
-open(os.path.join(base, "pages", "index.jsx"), "w").write(index_jsx)
+open(os.path.join(proj, "pages", "index.jsx"), "w").write(index_content)
 
-api_code = r"""export default async function handler(req, res) {
-  try {
-    const r = await fetch('https://api.dexscreener.com/latest/dex/pairs/solana', {
-      headers: { 'User-Agent': 'lp-memecoin-class' },
-      cache: 'no-store', // avoid stale
-    });
-    if (!r.ok) return res.status(r.status).json({ error: 'upstream_not_ok' });
+# README quick guide
+open(os.path.join(proj, "README.md"), "w").write("""# LP Memecoin Class — v2
+- Realtime volume Dexscreener (Solana)
+- Harga 200k
+- Wording 'income'
+## Local
+npm install
+npm run dev
+## Deploy
+Push ke GitHub lalu hubungkan ke Vercel (Next.js).
+""")
 
-    const data = await r.json();
-    const pairs = (data?.pairs || [])
-      .filter(p => p?.volume?.h24)
-      .sort((a,b)=> (b.volume?.h24||0) - (a.volume?.h24||0))
-      .reverse()
-      .slice(0, 8);
+# Also export the single index.jsx for quick drop-in
+single_index = os.path.join(base, "index.jsx")
+shutil.copyfile(os.path.join(proj, "pages", "index.jsx"), single_index)
 
-    return res.status(200).json({ pairs });
-  } catch (e) {
-    return res.status(500).json({ error: 'proxy_failed', message: String(e) });
-  }
-}
-"""
-open(os.path.join(base, "pages", "api", "sol-volume.js"), "w").write(api_code)
-
-# Zip them for easy download
-zip_path = "/mnt/data/fix-v3-files.zip"
+# Zip the project
+zip_path = os.path.join(base, "lp-memecoin-class-v2.zip")
+if os.path.exists(zip_path):
+    os.remove(zip_path)
 with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
-    for root, _, files in os.walk(base):
-        for f in files:
-            full = os.path.join(root, f)
-            z.write(full, os.path.relpath(full, base))
+    for root, _, files in os.walk(proj):
+        for file in files:
+            full = os.path.join(root, file)
+            rel = os.path.relpath(full, proj)
+            z.write(full, rel)
 
-(zip_path, os.path.join(base, "pages", "index.jsx"), os.path.join(base, "pages", "api", "sol-volume.js"))
+zip_path, single_index
