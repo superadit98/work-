@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import React, { useMemo, useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
-const idr = (n) => n.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+// Helper: format IDR
+const idr = (n) => n.toLocaleString("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
 
+// Impermanent Loss formula (simplified)
 function impermanentLossRatio(priceRatio){
   if(!priceRatio || priceRatio <= 0) return 0;
   const r = priceRatio;
@@ -11,17 +12,8 @@ function impermanentLossRatio(priceRatio){
   return Math.max(0, -il);
 }
 
-const volumeData = [
-  { day: 'Senin', volume: 180 },
-  { day: 'Selasa', volume: 220 },
-  { day: 'Rabu', volume: 300 },
-  { day: 'Kamis', volume: 250 },
-  { day: 'Jumat', volume: 400 },
-  { day: 'Sabtu', volume: 350 },
-  { day: 'Minggu', volume: 420 },
-];
-
-export default function Home() {
+export default function LandingPage() {
+  // Kalkulator states
   const [capital, setCapital] = useState(1500000); // IDR
   const [apy, setApy] = useState(24); // % APR
   const [months, setMonths] = useState(12);
@@ -36,6 +28,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
+      {/* Nav */}
       <header className="sticky top-0 z-40 backdrop-blur bg-neutral-950/70 border-b border-neutral-800">
         <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -52,6 +45,7 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-emerald-600/10 via-fuchsia-600/5 to-transparent" />
         <div className="mx-auto max-w-7xl px-4 py-16 lg:py-24 grid md:grid-cols-2 gap-10 items-center">
@@ -60,10 +54,10 @@ export default function Home() {
               Dapatkan <span className="text-emerald-400">Income</span> dari Menjadi Liquidity Provider di Solana
             </motion.h1>
             <p className="mt-4 text-neutral-300">
-              Lupakan trading memecoin yang berisiko tinggi. Jadilah Liquidity Provider dengan risiko yang lebih minim dan pendapatan dari fee swap.
+              Lupakan trading memecoin yang berisiko tinggi. Jadilah Liquidity Provider dengan risiko yang lebih minim dan income dari fee swap.
             </p>
             <ul className="mt-6 space-y-2 text-neutral-300">
-              <li>• E-book panduan lengkap</li>
+              <li>• E‑book panduan lengkap</li>
               <li>• Akses ke Grup Telegram private</li>
               <li>• Monitoring & update strategi</li>
             </ul>
@@ -74,7 +68,8 @@ export default function Home() {
             <p className="mt-3 text-xs text-neutral-400">Disclaimer: Tidak ada jaminan profit. Hasil bergantung pada pasar & eksekusi Anda.</p>
           </div>
 
-          <motion.div initial={{opacity:0,scale:0.95}} animate={{opacity:1,scale:1}} transition={{duration:0.6, delay:0.1}} className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl" id="calculator">
+          {/* Hero Kalkulator */}
+          <motion.div initial={{opacity:0,scale:0.95}} animate={{opacity:1,scale:1}} transition={{duration:0.6, delay:0.1}} className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl">
             <h3 className="text-lg font-semibold">Simulasi Bulanan</h3>
             <div className="mt-4 space-y-4">
               <div>
@@ -121,13 +116,14 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Benefits */}
       <section id="benefits" className="mx-auto max-w-7xl px-4 py-16">
         <h2 className="text-2xl md:text-3xl font-bold">Kenapa Memilih Menjadi Liquidity Provider?</h2>
         <div className="mt-8 grid md:grid-cols-3 gap-6">
           {[
-            {t:'Pendapatan dari Fee', d:'Dapatkan bagian dari biaya transaksi setiap kali ada swap di pool tempat Anda menyetor likuiditas.'},
-            {t:'Diversifikasi Strategi', d:'Tidak mengandalkan timing pasar seperti trading memecoin; fokus pada yield & manajemen risiko.'},
-            {t:'Panduan Praktis', d:'Ikuti langkah-langkah jelas: memilih pool yang ramai, menghindari token scam, dan cara meminimalkan impermanent loss.'},
+            {t:"Income dari Fee", d:"Dapatkan bagian dari biaya transaksi setiap kali ada swap di pool tempat Anda menyetor likuiditas."},
+            {t:"Diversifikasi Strategi", d:"Tidak mengandalkan timing pasar seperti trading memecoin; fokus pada yield & manajemen risiko."},
+            {t:"Panduan Praktis", d:"Ikuti langkah-langkah jelas: memilih pool yang ramai, menghindari token scam, dan cara meminimalkan impermanent loss."},
           ].map((b,i)=> (
             <motion.div key={i} initial={{opacity:0,y:10}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:0.05*i}} className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6">
               <div className="h-10 w-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 mb-3" />
@@ -139,40 +135,18 @@ export default function Home() {
         <p className="mt-6 text-xs text-neutral-400">Catatan: Menjadi LP tetap mengandung risiko. Produk ini bersifat edukasi, bukan ajakan/anjuran investasi, dan tidak menjanjikan profit.</p>
       </section>
 
-     <section className="mx-auto max-w-7xl px-4 py-16">
-  <h2 className="text-2xl md:text-3xl font-bold">Volume Memecoin di Solana (Real-time)</h2>
-  <LiveVolume />
-  <p className="mt-6 text-neutral-300 max-w-3xl">
-    Ekosistem DEX Solana yang ramai membuka peluang fee bagi LP. Semakin tinggi volume & swap, semakin besar potensi income dari biaya transaksi.
-  </p>
-</section>
-
-
-      <section id="curriculum" className="mx-auto max-w-7xl px-4 py-16">
-        <h2 className="text-2xl md:text-3xl font-bold">Apa yang Akan Anda Pelajari</h2>
-        <div className="mt-6 grid md:grid-cols-2 gap-6">
-          <ul className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6 space-y-3 text-sm">
-            <li>✅ Dasar-dasar AMM & pool di Solana</li>
-            <li>✅ Cara memilih pool dengan volume tinggi</li>
-            <li>✅ Menghindari impermanent loss berlebih</li>
-            <li>✅ Mendeteksi token scam & menjaga modal</li>
-            <li>✅ Tools eksekusi di ekosistem Solana (DEX, analytics, wallet)</li>
-            <li>✅ Step-by-step setup & monitoring</li>
-          </ul>
-          <div className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6">
-            <h3 className="font-semibold">Bonus</h3>
-            <ul className="mt-3 space-y-2 text-sm">
-              <li>🎁 Akses Grup Telegram private</li>
-              <li>🎁 Update rutin tentang pool menarik</li>
-              <li>🎁 Checklist siap pakai</li>
-            </ul>
-            <a href="#checkout" className="mt-6 inline-flex rounded-xl bg-emerald-500 px-5 py-3 font-semibold text-neutral-900 hover:bg-emerald-400">Ambil Paket</a>
-          </div>
-        </div>
+      {/* Volume Data realtime */}
+      <section className="mx-auto max-w-7xl px-4 py-16">
+        <h2 className="text-2xl md:text-3xl font-bold">Volume Memecoin di Solana (Real-time)</h2>
+        <LiveVolume />
+        <p className="mt-6 text-neutral-300 max-w-3xl">
+          Ekosistem DEX Solana yang ramai membuka peluang fee bagi LP. Semakin tinggi volume & swap, semakin besar potensi income dari biaya transaksi.
+        </p>
       </section>
 
+      {/* Pricing */}
       <section id="checkout" className="mx-auto max-w-7xl px-4 py-16">
-        <h2 className="text-2xl md:text-3xl font-bold">Paket All-in-One</h2>
+        <h2 className="text-2xl md:text-3xl font-bold">Paket All‑in‑One</h2>
         <div className="mt-6 grid md:grid-cols-1 gap-6">
           <div className="rounded-3xl border border-emerald-500/50 bg-neutral-900/90 p-6 flex flex-col">
             <div className="mb-2 text-xs font-semibold text-emerald-400">Diskon Spesial</div>
@@ -180,7 +154,7 @@ export default function Home() {
             <div className="mt-1 text-3xl font-extrabold">{idr(200000)}</div>
             <div className="mt-1 text-sm line-through text-neutral-500">{idr(500000)}</div>
             <ul className="mt-4 space-y-2 text-sm text-neutral-300">
-              <li>• E-book lengkap</li>
+              <li>• E‑book lengkap</li>
               <li>• Akses Grup Telegram Private</li>
               <li>• Monitoring & update strategi</li>
             </ul>
@@ -190,6 +164,29 @@ export default function Home() {
         <p className="mt-4 text-xs text-neutral-400">Pembelian dilakukan dengan menghubungi akun Telegram @ashitherewego.</p>
       </section>
 
+      {/* FAQ */}
+      <section id="faq" className="mx-auto max-w-7xl px-4 py-16">
+        <h2 className="text-2xl md:text-3xl font-bold">Pertanyaan Umum</h2>
+        <div className="mt-6 space-y-4">
+          <Faq q="Apakah pasti dapat income tiap bulan?" a="Tidak ada jaminan profit. Hasil bergantung pada modal, kondisi pasar, strategi, dan eksekusi." />
+          <Faq q="Apakah menjadi LP tanpa risiko?" a="Tidak. Risiko utama termasuk impermanent loss, fluktuasi yield, risiko protokol/kontrak pintar, dan volatilitas aset. Materi membantu mengenali dan mengelolanya." />
+          <Faq q="Apa saja yang saya dapatkan?" a="Anda mendapat e‑book, akses grup Telegram, monitoring, panduan memilih pool ramai, cara menghindari impermanent loss, serta menghindari token scam." />
+        </div>
+        <p className="mt-6 text-xs text-neutral-400">Disclaimer: Konten untuk tujuan edukasi. Bukan nasihat keuangan atau ajakan membeli aset kripto.</p>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-neutral-800">
+        <div className="mx-auto max-w-7xl px-4 py-10 text-sm text-neutral-400">
+          <div className="font-semibold text-neutral-200">LP Memecoin Class</div>
+          <p className="mt-2">Dapatkan income dari menjadi Liquidity Provider memecoin Solana.</p>
+          <p className="mt-2">Kontak Telegram: @ashitherewego</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
 function LiveVolume(){
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
@@ -198,16 +195,14 @@ function LiveVolume(){
   React.useEffect(()=>{
     async function run(){
       try{
-        // Ambil pairs terbaru di chain Solana dari Dexscreener
         const res = await fetch('https://api.dexscreener.com/latest/dex/pairs/solana');
         if(!res.ok) throw new Error('Network response was not ok');
         const data = await res.json();
         const list = data?.pairs || [];
-        // Urutkan berdasarkan volume 24 jam tertinggi
         const top = list
           .filter(p => p?.volume?.h24)
           .sort((a,b)=> (b.volume.h24||0) - (a.volume.h24||0))
-          .slice(0, 8);
+          .slice(0,8);
         setPairs(top);
       }catch(e){ setError(e.message); }
       finally{ setLoading(false); }
@@ -215,8 +210,8 @@ function LiveVolume(){
     run();
   },[]);
 
-  if (loading) return <div className="mt-6 text-neutral-400">Memuat data volume dari DEX Solana…</div>;
-  if (error)   return <div className="mt-6 text-red-400">Gagal memuat data: {String(error)}</div>;
+  if(loading) return <div className="mt-6 text-neutral-400">Memuat data volume dari DEX Solana…</div>;
+  if(error)   return <div className="mt-6 text-red-400">Gagal memuat data: {String(error)}</div>;
 
   const total24h = pairs.reduce((sum,p)=> sum + (p?.volume?.h24 || 0), 0);
 
@@ -227,7 +222,6 @@ function LiveVolume(){
         <div className="text-3xl font-extrabold text-emerald-400">
           {total24h.toLocaleString('en-US', { style:'currency', currency:'USD', maximumFractionDigits: 0 })}
         </div>
-
         <div className="mt-4 grid md:grid-cols-2 lg:grid-cols-4 gap-3">
           {pairs.map((p, i)=> (
             <div key={i} className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
@@ -245,32 +239,8 @@ function LiveVolume(){
   );
 }
 
-      
-      <section id="faq" className="mx-auto max-w-7xl px-4 py-16">
-        <h2 className="text-2xl md:text-3xl font-bold">Pertanyaan Umum</h2>
-        <div className="mt-6 space-y-4">
-          <Faq q="Apakah pasti dapat Income tiap bulan?" a="Tidak ada jaminan profit. Hasil bergantung pada modal, kondisi pasar, strategi, dan eksekusi." />
-          <Faq q="Apakah menjadi LP tanpa risiko?" a="Tidak. Risiko utama termasuk impermanent loss, fluktuasi yield, risiko protokol/kontrak pintar, dan volatilitas aset. Materi membantu mengenali dan mengelolanya." />
-          <Faq q="Apa saja yang saya dapatkan?" a="Anda mendapat e-book, akses grup Telegram, monitoring, panduan memilih pool ramai, cara menghindari impermanent loss, serta menghindari token scam." />
-          <Faq q="Bagaimana cara bergabung ke grup?" a="Setelah melakukan pembayaran/konfirmasi ke Telegram @ashitherewego, Anda akan langsung diberikan link ke grup private." />
-          <Faq q="Apakah ada refund?" a="Tidak ada kebijakan refund." />
-        </div>
-        <p className="mt-6 text-xs text-neutral-400">Disclaimer: Konten untuk tujuan edukasi. Bukan nasihat keuangan atau ajakan membeli aset kripto.</p>
-      </section>
-
-      <footer className="border-t border-neutral-800">
-        <div className="mx-auto max-w-7xl px-4 py-10 text-sm text-neutral-400">
-          <div className="font-semibold text-neutral-200">LP Memecoin Class</div>
-          <p className="mt-2">Dapatkan income dari menjadi Liquidity Provider memecoin Solana.</p>
-          <p className="mt-2">Kontak Telegram: @ashitherewego</p>
-        </div>
-      </footer>
-    </div>
-  );
-}
-
 function Faq({ q, a }){
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = React.useState(false);
   return (
     <div className="rounded-2xl border border-neutral-800">
       <button onClick={() => setOpen(!open)} className="w-full text-left px-5 py-4 font-medium flex items-center justify-between">
