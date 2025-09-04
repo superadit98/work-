@@ -1,33 +1,74 @@
-import React, { useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+# Create two ready-to-use files: updated pages/index.jsx and pages/api/sol-volume.js
+import os, textwrap, json, zipfile, shutil, pathlib
 
-// Helper: format IDR & USD
-const idr = (n) => n.toLocaleString("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
-const usd = (n) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-const usdCompact = (n) => {
-  const abs = Math.abs(n);
-  if (abs >= 1e12) return `$${(n/1e12).toFixed(2)}T`;
-  if (abs >= 1e9) return `$${(n/1e9).toFixed(2)}B`;
-  if (abs >= 1e6) return `$${(n/1e6).toFixed(2)}M`;
-  return usd(n);
-};
+base = "/mnt/data/fix-v3"
+if os.path.exists(base):
+    shutil.rmtree(base)
+os.makedirs(base, exist_ok=True)
+os.makedirs(os.path.join(base, "pages", "api"), exist_ok=True)
 
-// Monthly volume data (USD) example for 2024
-const monthlyData = [
-  { month: "Jan", volume: 1200000000 },
-  { month: "Feb", volume: 1500000000 },
-  { month: "Mar", volume: 1800000000 },
-  { month: "Apr", volume: 1700000000 },
-  { month: "May", volume: 2100000000 },
-  { month: "Jun", volume: 2400000000 },
-  { month: "Jul", volume: 2000000000 },
-  { month: "Aug", volume: 2600000000 },
-  { month: "Sep", volume: 3000000000 },
-  { month: "Oct", volume: 2800000000 },
-  { month: "Nov", volume: 3100000000 },
-  { month: "Dec", volume: 3500000000 },
-];
+index_jsx = r"""import React, { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
+
+// Helper: format IDR
+const idr = (n) => n.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+
+// Impermanent Loss formula (simplified)
+function impermanentLossRatio(priceRatio){
+  if(!priceRatio || priceRatio <= 0) return 0;
+  const r = priceRatio;
+  const il = (2 * Math.sqrt(r)) / (1 + r) - 1;
+  return Math.max(0, -il);
+}
+
+// === Real-time Volume from API route ===
+function LiveVolume(){
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+  const [pairs, setPairs] = React.useState([]);
+
+  React.useEffect(()=>{
+    async function run(){
+      try{
+        const res = await fetch('/api/sol-volume');
+        if(!res.ok) throw new Error('Network response was not ok');
+        const data = await res.json();
+        const list = data?.pairs || [];
+        setPairs(list);
+      }catch(e){ setError(e.message); }
+      finally{ setLoading(false); }
+    }
+    run();
+  },[]);
+
+  if (loading) return <div className="mt-6 text-neutral-400">Memuat data volume dari DEX Solana…</div>;
+  if (error)   return <div className="mt-6 text-red-400">Gagal memuat data: {String(error)}</div>;
+
+  const total24h = pairs.reduce((sum,p)=> sum + (p?.volume?.h24 || 0), 0);
+
+  return (
+    <div className="mt-6">
+      <div className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6">
+        <div className="text-sm text-neutral-300">Perkiraan Total Volume 24 jam (Top 8 Pairs)</div>
+        <div className="text-3xl font-extrabold text-emerald-400">
+          {total24h.toLocaleString('en-US', { style:'currency', currency:'USD', maximumFractionDigits: 0 })}
+        </div>
+        <div className="mt-4 grid md:grid-cols-2 lg:grid-cols-4 gap-3">
+          {pairs.map((p, i)=> (
+            <div key={i} className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
+              <div className="text-sm font-semibold">{p.baseToken?.symbol} / {p.quoteToken?.symbol}</div>
+              <div className="text-xs text-neutral-400 truncate">{p.dexId} • {p.chainId}</div>
+              <div className="mt-2 text-neutral-300 text-sm">
+                Vol 24h: {(p.volume?.h24||0).toLocaleString('en-US', { style:'currency', currency:'USD', maximumFractionDigits: 0 })}
+              </div>
+              <div className="text-xs text-neutral-400">Tx 24h: {(p.txns?.h24?.buys||0) + (p.txns?.h24?.sells||0)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function LandingPage() {
   // Kalkulator states
@@ -64,7 +105,7 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-emerald-600/10 via-fuchsia-600/5 to-transparent pointer-events-none -z-10" />
+        <div className="absolute inset-0 -z-10 pointer-events-none bg-gradient-to-b from-emerald-600/10 via-fuchsia-600/5 to-transparent" />
         <div className="mx-auto max-w-7xl px-4 py-16 lg:py-24 grid md:grid-cols-2 gap-10 items-center">
           <div>
             <motion.h1 initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.6}} className="text-4xl md:text-5xl font-extrabold leading-tight">
@@ -79,17 +120,64 @@ export default function LandingPage() {
               <li>• Monitoring & update strategi</li>
             </ul>
             <div className="mt-6 flex flex-wrap gap-3">
-              <a href="#checkout" className="rounded-2xl bg-emerald-500 px-6 py-3 font-semibold text-neutral-900 hover:bg-emerald-400">Gabung Sekarang</a>
-              <a href="#calculator" className="rounded-2xl border border-neutral-700 px-6 py-3 font-semibold hover:border-neutral-500">Coba Kalkulator</a>
+              <button
+                onClick={() => document.getElementById('checkout')?.scrollIntoView({ behavior: 'smooth' })}
+                className="rounded-2xl bg-emerald-500 px-6 py-3 font-semibold text-neutral-900 hover:bg-emerald-400">
+                Gabung Sekarang
+              </button>
+              <button
+                onClick={() => document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' })}
+                className="rounded-2xl border border-neutral-700 px-6 py-3 font-semibold hover:border-neutral-500">
+                Coba Kalkulator
+              </button>
             </div>
             <p className="mt-3 text-xs text-neutral-400">Disclaimer: Tidak ada jaminan profit. Hasil bergantung pada pasar & eksekusi Anda.</p>
           </div>
 
           {/* Hero Kalkulator */}
           <motion.div initial={{opacity:0,scale:0.95}} animate={{opacity:1,scale:1}} transition={{duration:0.6, delay:0.1}} className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl" id="calculator">
-            {/* ... kalkulator ... */}
             <h3 className="text-lg font-semibold">Simulasi Bulanan</h3>
-            {/* kalkulator content tetap sama */}
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="text-sm text-neutral-300">Modal (IDR)</label>
+                <input type="range" min={500000} max={10000000} value={capital} onChange={(e)=>setCapital(Number(e.target.value))} className="w-full" />
+                <div className="flex justify-between text-xs text-neutral-400"><span>500K</span><span>10jt</span></div>
+                <div className="mt-1 text-emerald-400 font-semibold">{idr(capital)}</div>
+              </div>
+              <div>
+                <label className="text-sm text-neutral-300">APR Dasar (%)</label>
+                <input type="range" min={5} max={60} value={apy} onChange={(e)=>setApy(Number(e.target.value))} className="w-full" />
+                <div className="flex justify-between text-xs text-neutral-400"><span>5%</span><span>60%</span></div>
+                <div className="mt-1">{apy}%/tahun</div>
+              </div>
+              <div>
+                <label className="text-sm text-neutral-300">Fee & Reward (APR %)</label>
+                <input type="range" min={0} max={50} value={feeApr} onChange={(e)=>setFeeApr(Number(e.target.value))} className="w-full" />
+                <div className="flex justify-between text-xs text-neutral-400"><span>0%</span><span>50%</span></div>
+                <div className="mt-1">{feeApr}%/tahun</div>
+              </div>
+              <div>
+                <label className="text-sm text-neutral-300">Perubahan Harga Aset (%)</label>
+                <input type="range" min={-50} max={100} value={priceChangePct} onChange={(e)=>setPriceChangePct(Number(e.target.value))} className="w-full" />
+                <div className="flex justify-between text-xs text-neutral-400"><span>-50%</span><span>+100%</span></div>
+                <div className="mt-1">{priceChangePct}% selama {months} bulan</div>
+              </div>
+              <div>
+                <label className="text-sm text-neutral-300">Durasi (bulan)</label>
+                <input type="range" min={1} max={24} value={months} onChange={(e)=>setMonths(Number(e.target.value))} className="w-full" />
+                <div className="flex justify-between text-xs text-neutral-400"><span>1</span><span>24</span></div>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-neutral-800 p-3">
+                  <div className="text-xs text-neutral-400">Estimasi Income/Bulan</div>
+                  <div className="text-2xl font-extrabold text-emerald-400">{idr(netEst1m)}</div>
+                </div>
+                <div className="rounded-2xl bg-neutral-800 p-3">
+                  <div className="text-xs text-neutral-400">Perkiraan IL (total)</div>
+                  <div className="text-xl font-bold">{idr(ilCost)}</div>
+                </div>
+              </div>
+            </div>
           </motion.div>
         </div>
       </section>
@@ -97,64 +185,100 @@ export default function LandingPage() {
       {/* Benefits */}
       <section id="benefits" className="mx-auto max-w-7xl px-4 py-16">
         <h2 className="text-2xl md:text-3xl font-bold">Kenapa Memilih Menjadi Liquidity Provider?</h2>
-        {/* ... */}
+        <div className="mt-8 grid md:grid-cols-3 gap-6">
+          {[
+            {t:'Income dari Fee', d:'Dapatkan bagian dari biaya transaksi setiap kali ada swap di pool tempat Anda menyetor likuiditas.'},
+            {t:'Diversifikasi Strategi', d:'Tidak mengandalkan timing pasar seperti trading memecoin; fokus pada yield & manajemen risiko.'},
+            {t:'Panduan Praktis', d:'Ikuti langkah-langkah jelas: memilih pool yang ramai, menghindari token scam, dan cara meminimalkan impermanent loss.'},
+          ].map((b,i)=> (
+            <motion.div key={i} initial={{opacity:0,y:10}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:0.05*i}} className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6">
+              <div className="h-10 w-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 mb-3" />
+              <h3 className="font-semibold">{b.t}</h3>
+              <p className="mt-2 text-neutral-300 text-sm">{b.d}</p>
+            </motion.div>
+          ))}
+        </div>
+        <p className="mt-6 text-xs text-neutral-400">Catatan: Menjadi LP tetap mengandung risiko. Produk ini bersifat edukasi, bukan ajakan/anjuran investasi, dan tidak menjanjikan profit.</p>
       </section>
 
-      {/* Volume Data bulanan */}
+      {/* Volume Data realtime */}
       <section className="mx-auto max-w-7xl px-4 py-16">
-        <h2 className="text-2xl md:text-3xl font-bold">Volume Memecoin di Solana (Bulanan)</h2>
-        <div className="mt-2 text-sm text-neutral-400">Satuan dalam USD (B = Billion / M = Million)</div>
-        <div className="mt-6 h-80 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="month" stroke="#aaa" />
-              <YAxis stroke="#aaa" tickFormatter={(v)=>usdCompact(v)} width={80} />
-              <Tooltip formatter={(v)=>usd(v)} labelFormatter={(l)=>`Bulan: ${l}`} />
-              <Line type="monotone" dataKey="volume" stroke="#10b981" strokeWidth={3} dot={{ r: 5 }} activeDot={{ r: 7 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        {(() => {
-          const total = monthlyData.reduce((s,d)=>s+d.volume,0);
-          const avg = total/monthlyData.length;
-          const best = monthlyData.reduce((a,b)=> a.volume>b.volume ? a:b);
-          return (
-            <div className="mt-6 grid md:grid-cols-3 gap-4">
-              <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-                <div className="text-xs text-neutral-400">Total Volume 2024</div>
-                <div className="text-xl font-bold text-emerald-400">{usdCompact(total)}</div>
-              </div>
-              <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-                <div className="text-xs text-neutral-400">Rata-rata Bulanan</div>
-                <div className="text-xl font-bold">{usdCompact(avg)}</div>
-              </div>
-              <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-                <div className="text-xs text-neutral-400">Bulan Tertinggi</div>
-                <div className="text-xl font-bold">{best.month} — {usdCompact(best.volume)}</div>
-              </div>
-            </div>
-          );
-        })()}
+        <h2 className="text-2xl md:text-3xl font-bold">Volume Memecoin di Solana (Real-time)</h2>
+        <LiveVolume />
         <p className="mt-6 text-neutral-300 max-w-3xl">
-          <strong>Sepanjang tahun 2024</strong>, volume trading memecoin di Solana mencapai akumulasi lebih dari {usd(30000000000)}. Tren ini menunjukkan semakin ramainya ekosistem, sehingga peluang <em>income</em> bagi liquidity provider dari fee transaksi semakin besar.
+          Ekosistem DEX Solana yang ramai membuka peluang fee bagi LP. Semakin tinggi volume & swap, semakin besar potensi income dari biaya transaksi.
         </p>
       </section>
 
-      {/* Pricing, FAQ, Footer tetap sama */}
+      {/* Curriculum */}
+      <section id="curriculum" className="mx-auto max-w-7xl px-4 py-16">
+        <h2 className="text-2xl md:text-3xl font-bold">Apa yang Akan Anda Pelajari</h2>
+        <div className="mt-6 grid md:grid-cols-2 gap-6">
+          <ul className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6 space-y-3 text-sm">
+            <li>✅ Dasar-dasar AMM & pool di Solana</li>
+            <li>✅ Cara memilih pool dengan volume tinggi</li>
+            <li>✅ Menghindari impermanent loss berlebih</li>
+            <li>✅ Mendeteksi token scam & menjaga modal</li>
+            <li>✅ Tools eksekusi di ekosistem Solana (DEX, analytics, wallet)</li>
+            <li>✅ Step-by-step setup & monitoring</li>
+          </ul>
+          <div className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6">
+            <h3 className="font-semibold">Bonus</h3>
+            <ul className="mt-3 space-y-2 text-sm">
+              <li>🎁 Akses Grup Telegram private</li>
+              <li>🎁 Update rutin tentang pool menarik</li>
+              <li>🎁 Checklist siap pakai</li>
+            </ul>
+            <a href="#checkout" className="mt-6 inline-flex rounded-xl bg-emerald-500 px-5 py-3 font-semibold text-neutral-900 hover:bg-emerald-400">Ambil Paket</a>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="checkout" className="mx-auto max-w-7xl px-4 py-16">
+        <h2 className="text-2xl md:text-3xl font-bold">Paket All-in-One</h2>
+        <div className="mt-6 grid md:grid-cols-1 gap-6">
+          <div className="rounded-3xl border border-emerald-500/50 bg-neutral-900/90 p-6 flex flex-col">
+            <div className="mb-2 text-xs font-semibold text-emerald-400">Diskon Spesial</div>
+            <div className="text-lg font-semibold">All in One</div>
+            <div className="mt-1 text-3xl font-extrabold">{idr(200000)}</div>
+            <div className="mt-1 text-sm line-through text-neutral-500">{idr(500000)}</div>
+            <ul className="mt-4 space-y-2 text-sm text-neutral-300">
+              <li>• E-book lengkap</li>
+              <li>• Akses Grup Telegram Private</li>
+              <li>• Monitoring & update strategi</li>
+            </ul>
+            <a href="https://t.me/ashitherewego" className="mt-6 inline-flex items-center justify-center rounded-xl px-5 py-3 font-semibold bg-emerald-500 text-neutral-900 hover:bg-emerald-400">Gabung via Telegram</a>
+          </div>
+        </div>
+        <p className="mt-4 text-xs text-neutral-400">Pembelian dilakukan dengan menghubungi akun Telegram @ashitherewego.</p>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="mx-auto max-w-7xl px-4 py-16">
+        <h2 className="text-2xl md:text-3xl font-bold">Pertanyaan Umum</h2>
+        <div className="mt-6 space-y-4">
+          <Faq q="Apakah pasti dapat income tiap bulan?" a="Tidak ada jaminan profit. Hasil bergantung pada modal, kondisi pasar, strategi, dan eksekusi." />
+          <Faq q="Apakah menjadi LP tanpa risiko?" a="Tidak. Risiko utama termasuk impermanent loss, fluktuasi yield, risiko protokol/kontrak pintar, dan volatilitas aset. Materi membantu mengenali dan mengelolanya." />
+          <Faq q="Apa saja yang saya dapatkan?" a="Anda mendapat e-book, akses grup Telegram, monitoring, panduan memilih pool ramai, cara menghindari impermanent loss, serta menghindari token scam." />
+        </div>
+        <p className="mt-6 text-xs text-neutral-400">Disclaimer: Konten untuk tujuan edukasi. Bukan nasihat keuangan atau ajakan membeli aset kripto.</p>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-neutral-800">
+        <div className="mx-auto max-w-7xl px-4 py-10 text-sm text-neutral-400">
+          <div className="font-semibold text-neutral-200">LP Memecoin Class</div>
+          <p className="mt-2">Dapatkan income dari menjadi Liquidity Provider memecoin Solana.</p>
+          <p className="mt-2">Kontak Telegram: @ashitherewego</p>
+        </div>
+      </footer>
     </div>
   );
 }
 
-function impermanentLossRatio(priceRatio){
-  if(!priceRatio || priceRatio <= 0) return 0;
-  const r = priceRatio;
-  const il = (2 * Math.sqrt(r)) / (1 + r) - 1;
-  return Math.max(0, -il);
-}
-
 function Faq({ q, a }){
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = React.useState(false);
   return (
     <div className="rounded-2xl border border-neutral-800">
       <button onClick={() => setOpen(!open)} className="w-full text-left px-5 py-4 font-medium flex items-center justify-between">
@@ -165,3 +289,38 @@ function Faq({ q, a }){
     </div>
   );
 }
+"""
+open(os.path.join(base, "pages", "index.jsx"), "w").write(index_jsx)
+
+api_code = r"""export default async function handler(req, res) {
+  try {
+    const r = await fetch('https://api.dexscreener.com/latest/dex/pairs/solana', {
+      headers: { 'User-Agent': 'lp-memecoin-class' },
+      cache: 'no-store', // avoid stale
+    });
+    if (!r.ok) return res.status(r.status).json({ error: 'upstream_not_ok' });
+
+    const data = await r.json();
+    const pairs = (data?.pairs || [])
+      .filter(p => p?.volume?.h24)
+      .sort((a,b)=> (b.volume?.h24||0) - (a.volume?.h24||0))
+      .reverse()
+      .slice(0, 8);
+
+    return res.status(200).json({ pairs });
+  } catch (e) {
+    return res.status(500).json({ error: 'proxy_failed', message: String(e) });
+  }
+}
+"""
+open(os.path.join(base, "pages", "api", "sol-volume.js"), "w").write(api_code)
+
+# Zip them for easy download
+zip_path = "/mnt/data/fix-v3-files.zip"
+with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+    for root, _, files in os.walk(base):
+        for f in files:
+            full = os.path.join(root, f)
+            z.write(full, os.path.relpath(full, base))
+
+(zip_path, os.path.join(base, "pages", "index.jsx"), os.path.join(base, "pages", "api", "sol-volume.js"))
