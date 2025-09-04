@@ -41,7 +41,13 @@ export default function LandingPage() {
             <a href="#curriculum" className="hover:text-white">Materi</a>
             <a href="#faq" className="hover:text-white">FAQ</a>
           </nav>
-          <a href="#checkout" className="inline-flex items-center rounded-xl bg-emerald-500 px-4 py-2 font-semibold hover:bg-emerald-400 text-neutral-900">Gabung Sekarang</a>
+         <button
+  onClick={() => document.getElementById('checkout')?.scrollIntoView({ behavior: 'smooth' })}
+  className="rounded-2xl bg-emerald-500 px-6 py-3 font-semibold text-neutral-900 hover:bg-emerald-400"
+>
+  Gabung Sekarang
+</button>
+
         </div>
       </header>
 
