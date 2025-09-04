@@ -29,6 +29,23 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
+<Head>
+  <title>LP Memecoin Class – Belajar Jadi Liquidity Provider Memecoin Solana</title>
+  <meta name="description" content="Pelajari cara mendapatkan income dari menjadi Liquidity Provider memecoin di blockchain Solana. Termasuk e-book, akses grup Telegram private, dan monitoring strategi." />
+  <meta name="keywords" content="Solana, Liquidity Provider, LP, memecoin, DeFi, crypto income, cara jadi LP, passive income kripto" />
+  <meta name="author" content="LP Memecoin Class" />
+  <meta property="og:title" content="LP Memecoin Class – Liquidity Provider Solana" />
+  <meta property="og:description" content="Dapatkan income dari menjadi Liquidity Provider memecoin di Solana dengan risiko lebih minim dibanding trading memecoin." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://lp-memecoin.vercel.app/" />
+  <meta property="og:image" content="/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="LP Memecoin Class – Liquidity Provider Solana" />
+  <meta name="twitter:description" content="Belajar jadi Liquidity Provider di Solana. Income lebih stabil, risiko lebih rendah." />
+  <meta name="twitter:image" content="/og-image.png" />
+</Head>
+
+
       {/* Nav */}
       <header className="sticky top-0 z-40 backdrop-blur bg-neutral-950/70 border-b border-neutral-800">
         <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
