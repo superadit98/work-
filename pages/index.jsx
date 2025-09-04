@@ -57,7 +57,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4 py-16 lg:py-24 grid md:grid-cols-2 gap-10 items-center">
           <div>
             <motion.h1 initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.6}} className="text-4xl md:text-5xl font-extrabold leading-tight">
-              Dapatkan <span className="text-emerald-400">Penghasilan</span> dari Menjadi Liquidity Provider di Solana
+              Dapatkan <span className="text-emerald-400">Income</span> dari Menjadi Liquidity Provider di Solana
             </motion.h1>
             <p className="mt-4 text-neutral-300">
               Lupakan trading memecoin yang berisiko tinggi. Jadilah Liquidity Provider dengan risiko yang lebih minim dan pendapatan dari fee swap.
@@ -189,7 +189,7 @@ export default function Home() {
           <div className="rounded-3xl border border-emerald-500/50 bg-neutral-900/90 p-6 flex flex-col">
             <div className="mb-2 text-xs font-semibold text-emerald-400">Diskon Spesial</div>
             <div className="text-lg font-semibold">All in One</div>
-            <div className="mt-1 text-3xl font-extrabold">{idr(100000)}</div>
+            <div className="mt-1 text-3xl font-extrabold">{idr(200000)}</div>
             <div className="mt-1 text-sm line-through text-neutral-500">{idr(500000)}</div>
             <ul className="mt-4 space-y-2 text-sm text-neutral-300">
               <li>• E-book lengkap</li>
@@ -205,7 +205,7 @@ export default function Home() {
       <section id="faq" className="mx-auto max-w-7xl px-4 py-16">
         <h2 className="text-2xl md:text-3xl font-bold">Pertanyaan Umum</h2>
         <div className="mt-6 space-y-4">
-          <Faq q="Apakah pasti dapat penghasilan tiap bulan?" a="Tidak ada jaminan profit. Hasil bergantung pada modal, kondisi pasar, strategi, dan eksekusi." />
+          <Faq q="Apakah pasti dapat Income tiap bulan?" a="Tidak ada jaminan profit. Hasil bergantung pada modal, kondisi pasar, strategi, dan eksekusi." />
           <Faq q="Apakah menjadi LP tanpa risiko?" a="Tidak. Risiko utama termasuk impermanent loss, fluktuasi yield, risiko protokol/kontrak pintar, dan volatilitas aset. Materi membantu mengenali dan mengelolanya." />
           <Faq q="Apa saja yang saya dapatkan?" a="Anda mendapat e-book, akses grup Telegram, monitoring, panduan memilih pool ramai, cara menghindari impermanent loss, serta menghindari token scam." />
           <Faq q="Bagaimana cara bergabung ke grup?" a="Setelah melakukan pembayaran/konfirmasi ke Telegram @ashitherewego, Anda akan langsung diberikan link ke grup private." />
@@ -217,7 +217,7 @@ export default function Home() {
       <footer className="border-t border-neutral-800">
         <div className="mx-auto max-w-7xl px-4 py-10 text-sm text-neutral-400">
           <div className="font-semibold text-neutral-200">LP Memecoin Class</div>
-          <p className="mt-2">Edukasi praktis untuk mendapatkan penghasilan sebagai Liquidity Provider di blockchain Solana.</p>
+          <p className="mt-2">Edukasi praktis untuk mendapatkan Income sebagai Liquidity Provider di blockchain Solana.</p>
           <p className="mt-2">Kontak Telegram: @ashitherewego</p>
         </div>
       </footer>
