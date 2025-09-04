@@ -139,26 +139,14 @@ export default function Home() {
         <p className="mt-6 text-xs text-neutral-400">Catatan: Menjadi LP tetap mengandung risiko. Produk ini bersifat edukasi, bukan ajakan/anjuran investasi, dan tidak menjanjikan profit.</p>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-16">
-        <h2 className="text-2xl md:text-3xl font-bold">Volume Memecoin di Solana</h2>
-        <p className="mt-4 text-neutral-300 max-w-3xl">
-          Ratusan juta USD volume harian memecoin terjadi di blockchain Solana. Dengan biaya transaksi yang murah dan ekosistem DEX yang berkembang pesat, Solana menjadi tempat favorit untuk trading memecoin. Hal ini menciptakan peluang besar bagi Liquidity Provider untuk mendapatkan fee dari setiap swap yang terjadi.
-        </p>
-        <div className="mt-6 h-72 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={volumeData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="day" stroke="#aaa" />
-              <YAxis stroke="#aaa" />
-              <Tooltip />
-              <Line type="monotone" dataKey="volume" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        <p className="mt-4 text-neutral-300 max-w-3xl">
-          Menjadi LP di Solana berarti Anda berpartisipasi di ekosistem dengan volume tinggi. Semakin ramai pool, semakin besar potensi pendapatan dari biaya transaksi. Inilah alasan utama mengapa Solana adalah pilihan tepat untuk memaksimalkan strategi LP Anda.
-        </p>
-      </section>
+     <section className="mx-auto max-w-7xl px-4 py-16">
+  <h2 className="text-2xl md:text-3xl font-bold">Volume Memecoin di Solana (Real-time)</h2>
+  <LiveVolume />
+  <p className="mt-6 text-neutral-300 max-w-3xl">
+    Ekosistem DEX Solana yang ramai membuka peluang fee bagi LP. Semakin tinggi volume & swap, semakin besar potensi income dari biaya transaksi.
+  </p>
+</section>
+
 
       <section id="curriculum" className="mx-auto max-w-7xl px-4 py-16">
         <h2 className="text-2xl md:text-3xl font-bold">Apa yang Akan Anda Pelajari</h2>
@@ -202,6 +190,62 @@ export default function Home() {
         <p className="mt-4 text-xs text-neutral-400">Pembelian dilakukan dengan menghubungi akun Telegram @ashitherewego.</p>
       </section>
 
+function LiveVolume(){
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+  const [pairs, setPairs] = React.useState([]);
+
+  React.useEffect(()=>{
+    async function run(){
+      try{
+        // Ambil pairs terbaru di chain Solana dari Dexscreener
+        const res = await fetch('https://api.dexscreener.com/latest/dex/pairs/solana');
+        if(!res.ok) throw new Error('Network response was not ok');
+        const data = await res.json();
+        const list = data?.pairs || [];
+        // Urutkan berdasarkan volume 24 jam tertinggi
+        const top = list
+          .filter(p => p?.volume?.h24)
+          .sort((a,b)=> (b.volume.h24||0) - (a.volume.h24||0))
+          .slice(0, 8);
+        setPairs(top);
+      }catch(e){ setError(e.message); }
+      finally{ setLoading(false); }
+    }
+    run();
+  },[]);
+
+  if (loading) return <div className="mt-6 text-neutral-400">Memuat data volume dari DEX Solana…</div>;
+  if (error)   return <div className="mt-6 text-red-400">Gagal memuat data: {String(error)}</div>;
+
+  const total24h = pairs.reduce((sum,p)=> sum + (p?.volume?.h24 || 0), 0);
+
+  return (
+    <div className="mt-6">
+      <div className="rounded-3xl border border-neutral-800 bg-neutral-900 p-6">
+        <div className="text-sm text-neutral-300">Perkiraan Total Volume 24 jam (Top 8 Pairs)</div>
+        <div className="text-3xl font-extrabold text-emerald-400">
+          {total24h.toLocaleString('en-US', { style:'currency', currency:'USD', maximumFractionDigits: 0 })}
+        </div>
+
+        <div className="mt-4 grid md:grid-cols-2 lg:grid-cols-4 gap-3">
+          {pairs.map((p, i)=> (
+            <div key={i} className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
+              <div className="text-sm font-semibold">{p.baseToken?.symbol} / {p.quoteToken?.symbol}</div>
+              <div className="text-xs text-neutral-400 truncate">{p.dexId} • {p.chainId}</div>
+              <div className="mt-2 text-neutral-300 text-sm">
+                Vol 24h: {(p.volume?.h24||0).toLocaleString('en-US', { style:'currency', currency:'USD', maximumFractionDigits: 0 })}
+              </div>
+              <div className="text-xs text-neutral-400">Tx 24h: {(p.txns?.h24?.buys||0) + (p.txns?.h24?.sells||0)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+      
       <section id="faq" className="mx-auto max-w-7xl px-4 py-16">
         <h2 className="text-2xl md:text-3xl font-bold">Pertanyaan Umum</h2>
         <div className="mt-6 space-y-4">
@@ -217,7 +261,7 @@ export default function Home() {
       <footer className="border-t border-neutral-800">
         <div className="mx-auto max-w-7xl px-4 py-10 text-sm text-neutral-400">
           <div className="font-semibold text-neutral-200">LP Memecoin Class</div>
-          <p className="mt-2">Edukasi praktis untuk mendapatkan Income sebagai Liquidity Provider di blockchain Solana.</p>
+          <p className="mt-2">Dapatkan income dari menjadi Liquidity Provider memecoin Solana.</p>
           <p className="mt-2">Kontak Telegram: @ashitherewego</p>
         </div>
       </footer>
