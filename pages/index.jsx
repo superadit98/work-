@@ -36,7 +36,7 @@ export default function LandingPage() {
             <span className="font-semibold tracking-wide">LP Memecoin Class</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm text-neutral-300">
-            <a href="#benefits" className="hover:text-white">Manfaat</</a>
+            <a href="#benefits" className="hover:text-white">Manfaat</a>
             <a href="#calculator" className="hover:text-white">Kalkulator</a>
             <a href="#curriculum" className="hover:text-white">Materi</a>
             <a href="#faq" className="hover:text-white">FAQ</a>
