@@ -47,7 +47,7 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-emerald-600/10 via-fuchsia-600/5 to-transparent" />
+       <div className="absolute inset-0 -z-10 pointer-events-none bg-gradient-to-b from-emerald-600/10 via-fuchsia-600/5 to-transparent" />
         <div className="mx-auto max-w-7xl px-4 py-16 lg:py-24 grid md:grid-cols-2 gap-10 items-center">
           <div>
             <motion.h1 initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.6}} className="text-4xl md:text-5xl font-extrabold leading-tight">
@@ -62,8 +62,13 @@ export default function LandingPage() {
               <li>• Monitoring & update strategi</li>
             </ul>
             <div className="mt-6 flex flex-wrap gap-3">
-              <a href="#checkout" className="rounded-2xl bg-emerald-500 px-6 py-3 font-semibold text-neutral-900 hover:bg-emerald-400">Gabung Sekarang</a>
-              <a href="#calculator" className="rounded-2xl border border-neutral-700 px-6 py-3 font-semibold hover:border-neutral-500">Coba Kalkulator</a>
+               <button onClick={() => document.getElementById('checkout')?.scrollIntoView({ behavior: 'smooth' })}
+  className="rounded-2xl bg-emerald-500 px-6 py-3 font-semibold text-neutral-900 hover:bg-emerald-400"> Gabung Sekarang </button>
+             <button
+onClick={() => document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' })}
+className="rounded-2xl border border-neutral-700 px-6 py-3 font-semibold hover:border-neutral-500">
+ Coba Kalkulator
+ </button>
             </div>
             <p className="mt-3 text-xs text-neutral-400">Disclaimer: Tidak ada jaminan profit. Hasil bergantung pada pasar & eksekusi Anda.</p>
           </div>
@@ -195,7 +200,7 @@ function LiveVolume(){
   React.useEffect(()=>{
     async function run(){
       try{
-        const res = await fetch('https://api.dexscreener.com/latest/dex/pairs/solana');
+        const res = await fetch('/api/sol-volume');
         if(!res.ok) throw new Error('Network response was not ok');
         const data = await res.json();
         const list = data?.pairs || [];
